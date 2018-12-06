@@ -1,0 +1,82 @@
+apply plugin: 'groovy'
+
+// In this section you declare where to find the dependencies of your project
+repositories {
+    mavenCentral()
+}
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.apache.httpcomponents:httpclient:4.5.2'
+        classpath 'org.codehaus.groovy.modules.http-builder:http-builder:0.6'
+   
+    }
+}
+
+ 
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.4.15'
+    testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
+}
+
+import groovyx.net.http.HTTPBuilder 
+import groovyx.net.http.Method
+import groovyx.net.http.ContentType
+
+ext.url = "http://helloworld.com"
+
+private String login() {
+  
+        def http = new HTTPBuilder(url)
+        def postBody =  ["username": "lucas" ,  "password": "passw0rd" ] 
+ 
+        def hs = [ "Accept":"application/json"  ] 
+        
+        http.request(Method.POST,ContentType.JSON) {
+        uri.path = '/login'
+        body = postBody 
+        headers = hs
+        requestContentType = ContentType.JSON
+        response.success = { resp , reader ->
+            println "Success! ${resp.status}"
+            println reader
+            return reader.token
+        }
+
+        response.failure = { resp ->
+            println "Request failed with status ${resp.status}"
+        }
+
+        }       
+}
+ 
+task getUsers() {
+
+    def token = login()
+    println "token = "+token
+    def path = '/users'
+    get( token , path)
+}
+
+
+private void get(String token ,String mypath) {   
+    
+    def myheaders = ["Accept":"application/json",
+              "Authorization": "Bearer "+token  ] 
+     def http = new HTTPBuilder(url)
+      http.get(path: mypath,
+                 headers: myheaders
+                 ) { resp, json ->
+                 println resp.status
+                 println json
+        }
+}
+    
+ 
+
+
+
+ 
